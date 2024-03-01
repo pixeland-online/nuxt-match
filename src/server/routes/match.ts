@@ -1,15 +1,25 @@
+import { getQuery } from "ufo";
+import type { UUID } from "crypto";
+
+function getMathId(url: string) {
+  return getQuery(url).matchId as UUID;
+}
+
 export default defineWebSocketHandler({
-  async open(peer) {
-    console.log("open");
+  upgrade(req) {
+    const matchId = getMathId(req.url);
+  },
+  open(peer) {
+    const matchId = getMathId(peer.url);
+    serverMatchJoin(matchId, peer);
   },
   close(peer, { code, reason }) {
-    console.log("close", code, reason);
+    const matchId = getMathId(peer.url);
+    serverMatchLeave(matchId, peer);
   },
-  upgrade(req) {
-    console.log("upgrade", req.url);
+  message(peer, message) {
+    const matchId = getMathId(peer.url);
+    serverMatchMessage(matchId, peer, message);
   },
-  message() { },
-  error(peer, error) {
-    console.log("error", error);
-  },
+  error(peer, error) {},
 });
