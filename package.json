@@ -14,11 +14,7 @@
   "scripts": {
     "dev:prepare": "nuxi prepare playground",
     "dev": "nuxi dev playground",
-    "dev:build": "nuxi build playground",
-    "release": "npm run lint && npm run test && changelogen --release && npm publish && git push --follow-tags",
-    "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest watch"
+    "dev:build": "nuxi build playground"
   },
   "dependencies": {
     "@nuxt/kit": "^3.10.3",

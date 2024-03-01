@@ -12,13 +12,16 @@ import { handlers } from "#internal/pixeland/virtual/handlers";
 
 const matches: Record<UUID, Match<any>> = {};
 
-export function defineServerMatch<T extends MatchState>(
+export function defineMatch<T extends MatchState>(
   config: MatchConfig<T>
 ) {
   const handler: MatchHandler<T> = (options) => {
     const { state, tickrate, label } = config.init(options);
 
     const runner = setInterval(() => {
+      // TODO add peer signal join 
+      // TODO remove peer signal leave 
+
       const result = config.update(match.state, match.tick);
 
       if (!result && match) {

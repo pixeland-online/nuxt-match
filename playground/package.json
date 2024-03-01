@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "nuxt-playground",
+  "name": "pixeland-playground",
   "type": "module",
   "scripts": {
     "dev": "nuxi dev",

@@ -7,13 +7,8 @@ export default defineWebSocketHandler({
   },
   upgrade(req) {
     console.log("upgrade", req.url);
-    return {
-      headers: {
-        "sec-websocket-extensions": "permessage-deflate",
-      },
-    };
   },
-  message() {},
+  message() { },
   error(peer, error) {
     console.log("error", error);
   },

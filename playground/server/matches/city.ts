@@ -1,4 +1,4 @@
-export default defineServerMatch({
+export default defineMatch({
   init(options) {
     return { state: { players: [] }, tickrate: 1, label: "city" };
   },
