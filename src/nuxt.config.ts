@@ -1,5 +1,8 @@
 export default defineNuxtConfig({
   nitro: {
-    scanDirs: ['/matches']
-  }
-})
+    scanDirs: ["/matches"],
+    experimental: {
+      websocket: true,
+    },
+  },
+});

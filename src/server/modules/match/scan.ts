@@ -1,6 +1,6 @@
 import { relative, join } from "pathe";
 import { globby } from "globby";
-import type { Nitro } from 'nitropack'
+import type { Nitro } from "nitropack";
 
 export const GLOB_SCAN_PATTERN = "**/*.{js,mjs,cjs,ts,mts,cts,tsx,jsx}";
 type FileInfo = { path: string; fullPath: string };

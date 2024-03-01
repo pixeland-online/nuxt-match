@@ -1,6 +1,4 @@
 export default defineNuxtConfig({
-  devtools: { enabled: true },
-  extends: [
-    '../'
-  ],
-})
+  devtools: { enabled: false },
+  extends: ["../"],
+});

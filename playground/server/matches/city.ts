@@ -1,26 +1,26 @@
-export default definePixelandMatch({
+export default defineServerMatch({
   init(options) {
-    return { state: { players: [] }, tickrate: 20, label: 'city' }
+    return { state: { players: [] }, tickrate: 1, label: "city" };
   },
   update(state, tick) {
-    console.log('update', tick)
+    console.log("update", tick);
 
-    if (tick >= 1000) {
-      return null
+    if (tick >= 10) {
+      return null;
     }
 
-    return state
+    return state;
   },
   join(state, tick) {
-    return state
+    return state;
   },
   join_attempt(state, tick) {
-    return true
+    return true;
   },
   leave(state, tick) {
-    return state
+    return state;
   },
   terminate(state, tick) {
-    return state
+    return state;
   },
-})
+});
