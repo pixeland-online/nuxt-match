@@ -1,0 +1,31 @@
+{
+  "name": "nuxt-server",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "repository": "https://github.com/pixeland-online/core",
+  "author": "JCtapuk <61321608+JCtapuk@users.noreply.github.com>",
+  "license": "MIT",
+  "main": "./nuxt.config.ts",
+  "files": [
+    "src",
+    "nuxt.config.ts"
+  ],
+  "scripts": {
+    "dev:prepare": "nuxi prepare playground",
+    "dev": "nuxi dev playground",
+    "dev:build": "nuxi build playground",
+    "release": "npm run lint && npm run test && changelogen --release && npm publish && git push --follow-tags",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  },
+  "dependencies": {
+    "@nuxt/kit": "^3.10.3",
+    "globby": "^14.0.1",
+    "pathe": "^1.1.2"
+  },
+  "devDependencies": {
+    "nuxt": "^3.10.3"
+  }
+}
