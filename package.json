@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
-  "repository": "https://github.com/pixeland-online/core",
   "author": "JCtapuk <61321608+JCtapuk@users.noreply.github.com>",
   "license": "MIT",
   "main": "./nuxt.config.ts",
