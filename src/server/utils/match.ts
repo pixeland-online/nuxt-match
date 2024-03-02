@@ -1,169 +1,263 @@
-import { randomUUID, type UUID } from "node:crypto";
+import { Dispatcher } from "./dispatcher";
+import { Updater } from "./updater";
+import { randomUUID, type UUID } from "crypto";
 import type { Peer, Message } from "crossws";
-import type {
-  Match,
-  MatchConfig,
-  MatchHandler,
-  MatchOptions,
-  MatchState,
-} from "../types/match";
+import { Client, type ClientRaw } from "./client";
 
-//@ts-ignore
-import { handlers } from "#internal/pixeland/virtual/handlers";
+export type EventLeave = { type: "LEAVE"; client: ClientRaw["clientId"] };
+export type EventJoin = { type: "JOIN"; client: ClientRaw["clientId"] };
+export type EventMessage = {
+  type: "MESSAGE";
+  client: ClientRaw["clientId"];
+  message: Message;
+};
 
-const matches: Record<UUID, Match<any>> = {};
+export type MatchOptions = {};
 
-export function defineMatch<T extends MatchState>(config: MatchConfig<T>) {
-  const handler: MatchHandler<T> = (name, options) => {
-    const { state, tickrate, label } = config.init(options);
+export type MatchMessage = { client: ClientRaw["clientId"]; message: Message };
 
-    const runner = setInterval(() => {
-      const join = match.context.clients
-        .filter((client) => client.status == "JOIN")
-        .map((client) => client.peer.id);
-      const leave = match.context.clients
-        .filter((client) => client.status == "LEAVE")
-        .map((client) => client.peer.id);
+export type MatchReconnect = {
+  client: Client;
+  timeout: NodeJS.Timeout;
+};
 
-      if (join.length > 0) {
-        config.join(match.state, match.tick, join);
+export type MatchHandler<T extends MatchState> = {
+  init(options: MatchOptions): { state: T; tickrate: number };
+  update(
+    state: T,
+    dispatcher: Dispatcher,
+    tick: number,
+    messages: MatchMessage[]
+  ): T | null;
+  join(
+    state: T,
+    dispatcher: Dispatcher,
+    tick: number,
+    clients: ClientRaw["clientId"][]
+  ): T;
+  join_attempt(
+    state: T,
+    dispatcher: Dispatcher,
+    tick: number,
+    client: ClientRaw["clientId"]
+  ): boolean;
+  leave(
+    state: T,
+    dispatcher: Dispatcher,
+    tick: number,
+    clients: ClientRaw["clientId"][]
+  ): T;
+};
 
-        for (let id of join) {
-          const client = match.context.clients.find(
-            (client) => client.peer.id == id
-          );
+export type MatchState = {};
 
-          if (client) {
-            client.status = "IDLE";
-          }
-        }
-      }
+export class Match {
+  static instances: Array<Match> = [];
 
-      if (leave.length > 0) {
-        config.leave(match.state, match.tick, leave);
+  #id = randomUUID();
+  #name: string;
+  #updater: Updater;
+  #dispatcher: Dispatcher;
+  #handler: MatchHandler<MatchState>;
+  #state: MatchState = {};
+  #clients: Array<Client> = [];
+  #events: Array<EventJoin | EventLeave | EventMessage> = [];
+  #reconnects: Record<string, MatchReconnect> = {};
 
-        match.context.clients = match.context.clients.filter(
-          (client) => !leave.includes(client.peer.id)
-        );
-      }
-
-      const result = config.update(
-        match.state,
-        match.tick,
-        match.context.queues
-          .slice(0, match.context.queues.length)
-          .map((queue) => ({ sender: queue.peer.id, data: queue.message }))
-      );
-
-      if (!result) {
-        clearInterval(match.runner);
-        delete matches[match.context.uuid];
-      }
-
-      match.tick++;
-    }, 1000 / Math.max(1, Math.min(60, tickrate)));
-
-    const match: Match<T> = {
-      context: { uuid: randomUUID(), name, clients: [], queues: [] }, // TODO Replace to dispatcher
-      state,
-      tick: 0,
-      label,
-      config,
-      runner,
-    };
-
-    matches[match.context.uuid] = match;
-
-    return match;
-  };
-
-  return handler;
-}
-
-// TODO Replace arguments (no use callback)
-// Example find matches
-export function serverMatchFind<T extends MatchState>(
-  callback: (match: Match<T>) => boolean
-) {
-  return Object.entries(matches)
-    .filter(([_, match]) => callback(match))
-    .map(([_, match]) => ({
-      uuid: match.context.uuid,
-      name: match.context.name,
-      clients: match.context.clients.length,
-    }));
-}
-
-export async function serverMatchCreate<T extends MatchState>(
-  name: string,
-  options: MatchOptions = {}
-) {
-  if (!handlers[name]) {
-    throw new Error("No found handler match");
+  get id() {
+    return this.#id;
   }
 
-  const target = handlers[name];
-  const handler = await target.resolve();
-  const match = handler(name, options) as Match<T>;
-
-  return match;
-}
-
-export function serverMatchRequest(id: UUID, data: any) {
-  if (!matches[id]) {
-    throw new Error("No found instance match");
+  get name() {
+    return this.#name;
   }
 
-  const match = matches[id];
-  const result = match.config.request(match.state, match.tick, data);
-
-  return result.response || undefined;
-}
-
-export function serverMatchMessage(id: UUID, peer: Peer, message: Message) {
-  if (!matches[id]) {
-    throw new Error("No found instance match");
+  get clients() {
+    return this.#clients;
   }
 
-  const match = matches[id];
-  match.context.queues.push({ peer, message });
-}
-
-export function serverMatchJoinAttempt(id: UUID, peer: Peer) {
-  if (!matches[id]) {
-    throw new Error("No found instance match");
+  constructor(
+    name: string,
+    handler: MatchHandler<MatchState>,
+    options: MatchOptions = {}
+  ) {
+    this.#name = name;
+    this.#updater = new Updater(this.update.bind(this));
+    this.#dispatcher = new Dispatcher(this);
+    this.#handler = handler;
+    this.start(options);
   }
 
-  const match = matches[id];
-  return match.config.join_attempt(match.state, match.tick, peer.id);
-}
+  private update(tick: number) {
+    const events = this.#events.slice(0, this.#events.length);
 
-export function serverMatchJoin(id: UUID, peer: Peer) {
-  if (!matches[id]) {
-    throw new Error("No found instance match");
-  }
+    const joines = events.filter(
+      (event) => event.type == "JOIN"
+    ) as EventJoin[];
+    const leaves = events.filter(
+      (event) => event.type == "LEAVE"
+    ) as EventLeave[];
+    const messages = events.filter(
+      (event) => event.type == "MESSAGE"
+    ) as EventMessage[];
 
-  const match = matches[id];
-  match.context.clients.push({ peer, status: "JOIN" });
-}
+    let state = this.#state;
 
-export function serverMatchLeave(id: UUID, peer: Peer) {
-  if (!matches[id]) {
-    throw new Error("No found instance match");
-  }
-
-  const match = matches[id];
-  const target = match.context.clients.find(
-    (client) => client.peer.id == peer.id
-  );
-
-  if (target) {
-    if (target.status == "IDLE") {
-      target.status = "LEAVE";
-    } else if (target.status == "JOIN") {
-      match.context.clients = match.context.clients.filter(
-        (client) => client.peer.id != target.peer.id
+    if (joines.length > 0) {
+      state = this.#handler.join(
+        state,
+        this.#dispatcher,
+        tick,
+        joines.map((event) => event.client)
       );
     }
+
+    if (leaves.length > 0) {
+      state = this.#handler.leave(
+        state,
+        this.#dispatcher,
+        tick,
+        leaves.map((event) => event.client)
+      );
+    }
+
+    this.#events = [];
+
+    const update = this.#handler.update(
+      state,
+      this.#dispatcher,
+      tick,
+      messages.map(({ client, message }) => ({ client, message }))
+    );
+
+    if (update == null) {
+      this.stop();
+    } else {
+      this.#state = update || state;
+    }
+  }
+
+  start(options: MatchOptions) {
+    const { state, tickrate } = this.#handler.init(options);
+    this.#state = state;
+    this.#updater.start(tickrate);
+    Match.instances.push(this);
+  }
+
+  stop() {
+    // Stop update match
+    this.#updater.stop();
+
+    // Clear reconnects
+    for (let recconect in this.#reconnects) {
+      const { timeout } = this.#reconnects[recconect];
+      clearTimeout(timeout);
+    }
+
+    // Remove instance match
+    const index = Match.instances.findIndex((match) => match.id == this.id);
+    Match.instances.slice(index, 1);
+  }
+
+  join(peer: Peer, reconnect?: UUID) {
+    if (reconnect) {
+      if (!this.#reconnects[reconnect]) {
+        throw new Error("No found client reconnected");
+      }
+
+      const { client, timeout } = this.#reconnects[reconnect];
+
+      delete this.#reconnects[reconnect];
+      clearTimeout(timeout);
+      client.peer = peer;
+      return;
+    }
+
+    if (this.hasClientByPeer(peer)) {
+      throw new Error("Dublicate client peer");
+    }
+
+    const client = new Client(peer);
+
+    if (
+      this.#handler.join_attempt(
+        this.#state,
+        this.#dispatcher,
+        this.#updater.tick,
+        client.id
+      )
+    ) {
+      this.#clients.push(client);
+      this.#events.push({ client: client.id, type: "JOIN" });
+      // Send message reconnect uuid
+    }
+  }
+
+  leave(peer: Peer, recconect: number | false = false) {
+    const client = this.findClientByPeer(peer);
+
+    if (!client) {
+      return;
+    }
+
+    const remove = () => {
+      this.#clients = this.#clients.filter((c) => c.peerId != peer.id);
+      this.#events.push({ client: client.id, type: "LEAVE" });
+    };
+
+    if (typeof recconect == "number") {
+      this.#reconnects[client.reconnect] = {
+        client,
+        timeout: setTimeout(() => {
+          delete this.#reconnects[client.reconnect];
+          remove();
+        }, recconect),
+      };
+      return;
+    }
+
+    remove();
+  }
+
+  message(peer: Peer, message: Message) {
+    const client = this.findClientByPeer(peer);
+
+    if (!client) {
+      return;
+    }
+
+    this.#events.push({
+      client: client.id,
+      message,
+      type: "MESSAGE",
+    });
+  }
+
+  hasClient(id: UUID) {
+    return !!this.findClient(id);
+  }
+
+  findClient(id: UUID) {
+    for (let client of this.clients) {
+      if (client.id == id) {
+        return client;
+      }
+    }
+
+    return null;
+  }
+
+  hasClientByPeer(peer: Peer) {
+    return !!this.findClientByPeer(peer);
+  }
+
+  findClientByPeer(peer: Peer) {
+    for (let client of this.clients) {
+      if (client.peerId == peer.id) {
+        return client;
+      }
+    }
+
+    return null;
   }
 }

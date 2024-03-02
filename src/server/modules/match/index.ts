@@ -1,6 +1,6 @@
 import { createResolver } from "@nuxt/kit";
 import { scanMatches } from "./scan";
-import { join, normalize } from "pathe";
+import { normalize } from "pathe";
 
 export default defineNitroModule({
   name: "pixeland-console",
@@ -8,21 +8,11 @@ export default defineNitroModule({
     const { resolve } = createResolver(import.meta.url);
     const runtimeDir = resolve("./runtime");
     const scannedMatches = await scanMatches(nitro);
-    const matches: Record<string, { handler: string; description: string }> =
-      {};
+    const matches: Record<string, string> = {};
 
     // Scan Matches
     for (const scannedMatch of scannedMatches) {
-      if (scannedMatch.name in matches) {
-        if (!matches[scannedMatch.name].handler) {
-          matches[scannedMatch.name].handler = scannedMatch.handler;
-        }
-      } else {
-        matches[scannedMatch.name] = {
-          handler: scannedMatch.handler,
-          description: "",
-        };
-      }
+      matches[scannedMatch.name] = scannedMatch.handler;
     }
 
     nitro.options.alias["#internal/pixeland"] = runtimeDir;
@@ -32,15 +22,12 @@ export default defineNitroModule({
   export const handlers = {
     ${Object.entries(matches)
       .map(
-        ([name, match]) =>
+        ([name, handler]) =>
           `"${name}": {
-            meta: {
-              description: ${JSON.stringify(match.description)},
-            },
             resolve: ${
-              match.handler
+              handler
                 ? `() => import("${normalize(
-                    match.handler
+                    handler
                   )}").then(r => r.default || r)`
                 : "undefined"
             },

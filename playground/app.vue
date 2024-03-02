@@ -19,7 +19,7 @@ async function connect() {
     (isSecure ? "wss://" : "ws://") +
     location.host +
     "/match?matchId=" +
-    data.uuid;
+    data.match.id;
 
   ws = new WebSocket(url);
 

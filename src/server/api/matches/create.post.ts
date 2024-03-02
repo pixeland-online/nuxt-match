@@ -3,8 +3,9 @@ export default defineEventHandler(async (event) => {
   const match = await serverMatchCreate(body.name);
 
   return {
-    uuid: match.context.uuid,
-    name: match.context.name,
-    clients: match.context.clients.length,
+    match: {
+      id: match.id,
+      name: match.name,
+    },
   };
 });

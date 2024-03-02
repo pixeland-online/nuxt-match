@@ -1,6 +1,6 @@
-import type { MatchHandler, MatchMeta } from "../../../../types/match";
+import type { Match, MatchOptions } from "../../../../utils/match";
 
 export const handlers: Record<
   string,
-  { resolve: () => Promise<MatchHandler<any>>; meta: MatchMeta }
+  { resolve: () => Promise<(name: string, options: MatchOptions) => Match> }
 > = {};

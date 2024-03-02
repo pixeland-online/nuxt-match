@@ -1,75 +1,52 @@
 interface State {
   players: Record<string, { x: number; y: number }>;
-  destroyTimeLeft: number;
+  destroyTimeLife: number;
 }
 
-export default defineMatch<State>({
+export default defineMatchHandler<State>({
   init(options) {
     return {
-      state: { players: {}, destroyTimeLeft: 10 },
+      state: { players: {}, destroyTimeLife: 10 },
       tickrate: 1,
-      label: "city",
     };
   },
-  update(state, tick, messages) {
-    for (let { sender, data } of messages) {
-      if (data.text() == "ping") {
-        // Example Broadcast Target Client (sender): dispatcher.broadcast("pong", [sender])
-        // Example Broadcast All CLient: dispatcher.broadcast("pong")
-        // Implement dispatcher so that there are no duplicate messages sent,
-        // that is, if the recipient has duplicates, then they will not be sent.
-        // This will allow optimizations such as player movement
-        // Example:
-        // for (let i = 0; i < 10; i++) {
-        //   dispatcher.broadcast("pong", [sender])
-        // }
-        // During the current tick, 1 message will be sent to recipients and not 10 times
-        // Since 1 argument is strictly checked for duplicates, even strings, numbers or objects
-      }
-    }
-
+  update(state, dispatcher, tick, messages) {
     if (Object.entries(state.players).length == 0) {
-      state.destroyTimeLeft--;
+      state.destroyTimeLife--;
     }
 
-    if (state.destroyTimeLeft == 0) {
-      console.log("destroy match");
-      return null; // destroy match
+    if (state.destroyTimeLife == 0) {
+      console.log("destroy match", tick);
+      return null;
     } else {
-      console.log("update match");
+      console.log("update match", tick);
     }
 
     return state;
   },
-  join(state, tick, clients) {
-    console.log("join", clients);
+  join(state, dispatcher, tick, clients) {
+    console.log("join", tick, clients);
 
     for (let client of clients) {
       state.players[client] = { x: 0, y: 0 };
-      // Example Broadcast: dispatcher.broadcast("player.join", client)
     }
 
-    state.destroyTimeLeft = 10; // Restored 10 sec time
+    state.destroyTimeLife = 10;
 
     return state;
   },
-  join_attempt(state, tick, client) {
-    return true;
+  join_attempt(state, dispatcher, tick, client) {
+    console.log("join_attempt", tick, client);
+
+    return true; // check limit room or only vip, more ideas
   },
-  leave(state, tick, clients) {
-    console.log("leave", clients);
+  leave(state, dispatcher, tick, clients) {
+    console.log("leave", tick, clients);
 
     for (let client of clients) {
       delete state.players[client];
-      // Example Broadcast: dispatcher.broadcast("player.leave", client)
     }
 
     return state;
-  },
-  terminate(state, tick) {
-    return state;
-  },
-  request(state, tick, data) {
-    return { state };
   },
 });
