@@ -17,9 +17,7 @@ export class Dispatcher {
     let targets = this.#match.clients;
 
     if (clients.length > 0) {
-      targets = targets.filter((target) =>
-        clients.includes(target.raw.clientId)
-      );
+      targets = targets.filter((target) => clients.includes(target.id));
     }
 
     for (let target of targets) {
