@@ -57,6 +57,11 @@ export default defineMatchHandler<State>({
     return state;
   },
   signal(state, dispatcher, tick, data) {
-    return { state }
+    // example api signal close
+    if (data == "close") {
+      return { state: null };
+    }
+
+    return { state };
   },
 });
