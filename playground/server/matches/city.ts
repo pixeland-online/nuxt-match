@@ -27,8 +27,6 @@ export default defineMatchHandler<State>({
     if (state.destroyTimeLife == 0) {
       console.log("destroy match", tick);
       return null;
-    } else {
-      console.log("update match", tick);
     }
 
     return state;
@@ -57,5 +55,8 @@ export default defineMatchHandler<State>({
     }
 
     return state;
+  },
+  signal(state, dispatcher, tick, data) {
+    return { state }
   },
 });

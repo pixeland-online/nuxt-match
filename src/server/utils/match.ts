@@ -47,6 +47,12 @@ export type MatchHandler<T extends MatchState> = {
     tick: number,
     clients: ClientRaw["clientId"][]
   ): T;
+  signal<R extends any>(
+    state: T,
+    dispatcher: Dispatcher,
+    tick: number,
+    data: any
+  ): { state: T, result?: R }
 };
 
 export type MatchState = {};
