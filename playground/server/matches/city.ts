@@ -11,6 +11,15 @@ export default defineMatchHandler<State>({
     };
   },
   update(state, dispatcher, tick, messages) {
+    console.log("messages", tick, messages);
+
+    // Example ping/pong
+    for (let { client, message } of messages) {
+      if (message.text() == "ping") {
+        dispatcher.broadcast("pong", [client]);
+      }
+    }
+
     if (Object.entries(state.players).length == 0) {
       state.destroyTimeLife--;
     }

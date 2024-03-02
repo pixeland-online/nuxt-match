@@ -1,7 +1,12 @@
-<template>App</template>
+<template>
+  <div v-if="pong">PONG</div>
+  <div v-else>PING</div>
+  <button @click="ping">Send Ping</button>
+</template>
 
 <script setup lang="ts">
 let ws: WebSocket | undefined;
+const pong = ref(true);
 
 // Test Connect WebSocket (No Reconnect)
 async function connect() {
@@ -24,9 +29,23 @@ async function connect() {
   ws = new WebSocket(url);
 
   await new Promise((resolve) => ws?.addEventListener("open", resolve));
+
+  return ws;
 }
 
-onMounted(() => {
-  connect();
+function ping() {
+  if (!ws) return;
+  pong.value = false;
+  ws.send("ping");
+}
+
+onMounted(async () => {
+  const ws = await connect();
+
+  ws.addEventListener("message", (message) => {
+    if (message.data == "pong") {
+      pong.value = true;
+    }
+  });
 });
 </script>
