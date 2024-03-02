@@ -35,6 +35,16 @@ export async function serverMatchCreate(
   return match;
 }
 
+export function serverMatchSignal<T extends void>(matchId: UUID, data: any) {
+  const match = Match.instances.find((match) => match.id == matchId);
+
+  if (!match) {
+    throw new Error("No found instance match");
+  }
+
+  return match.signal<T>(data);
+}
+
 export function eventMatchJoin(matchId: UUID, peer: Peer) {
   const match = Match.instances.find((match) => match.id == matchId);
 

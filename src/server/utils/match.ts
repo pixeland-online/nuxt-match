@@ -47,12 +47,12 @@ export type MatchHandler<T extends MatchState> = {
     tick: number,
     clients: ClientRaw["clientId"][]
   ): T;
-  signal<R extends any>(
+  signal<R extends void>(
     state: T,
     dispatcher: Dispatcher,
     tick: number,
     data: any
-  ): { state: T, result?: R }
+  ): { state: T | null; result?: R };
 };
 
 export type MatchState = {};
@@ -237,6 +237,23 @@ export class Match {
       message,
       type: "MESSAGE",
     });
+  }
+
+  signal<T extends void>(data: any) {
+    const { state, result } = this.#handler.signal<T>(
+      this.#state,
+      this.#dispatcher,
+      this.#updater.tick,
+      data
+    );
+
+    if (state == null) {
+      this.stop();
+    } else {
+      this.#state = state || this.#state;
+    }
+
+    return result;
   }
 
   hasClient(id: UUID) {
