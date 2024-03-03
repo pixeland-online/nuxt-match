@@ -60,11 +60,11 @@ onMounted(async () => {
           message = JSON.parse(message);
 
           if (message.type == "joinPlayer") {
-            console.log("joinPlayer", message.client);
+            console.log("joinPlayer", message);
           }
 
           if (message.type == "leavePlayer") {
-            console.log("leavePlayer", message.client);
+            console.log("leavePlayer", message);
           }
         }
       }

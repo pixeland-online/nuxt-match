@@ -7,7 +7,7 @@ export default defineMatchHandler<State>({
   init(options) {
     return {
       state: { players: {}, destroyTimeLife: 10 },
-      tickrate: 1,
+      tickrate: 10,
     };
   },
   update(state, dispatcher, tick, messages) {
