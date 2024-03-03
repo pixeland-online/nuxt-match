@@ -5,6 +5,8 @@
 </template>
 
 <script setup lang="ts">
+import { ProtocolOp } from "../src/server/utils/protocol";
+
 let ws: WebSocket | undefined;
 const pong = ref(true);
 
@@ -43,9 +45,29 @@ onMounted(async () => {
   const ws = await connect();
 
   ws.addEventListener("message", (message) => {
-    if (message.data == "pong") {
-      pong.value = true;
-      console.log("pong");
+    const { op, data } = JSON.parse(message.data);
+
+    if (op == ProtocolOp.RECONNECT) {
+      // TODO
+    }
+
+    if (op == ProtocolOp.MATCH_DATA) {
+      for (let message of data) {
+        if (message == "pong") {
+          pong.value = true;
+          console.log("pong");
+        } else {
+          message = JSON.parse(message);
+
+          if (message.type == "joinPlayer") {
+            console.log("joinPlayer", message.client);
+          }
+
+          if (message.type == "leavePlayer") {
+            console.log("leavePlayer", message.client);
+          }
+        }
+      }
     }
   });
 });

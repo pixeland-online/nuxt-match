@@ -25,11 +25,7 @@ export default defineMatchHandler<State>({
           const x = data.x as number;
           const y = data.y as number;
           state.players[client] = { x, y };
-          dispatcher.broadcast(
-            JSON.stringify({ type: "move", x, y, client }),
-            [],
-            "move"
-          );
+          dispatcher.broadcast({ type: "move", x, y, client }, [], "move");
         }
       }
     }
@@ -51,9 +47,7 @@ export default defineMatchHandler<State>({
     for (let client of clients) {
       const player = { x: 0, y: 0 };
       state.players[client] = player;
-      dispatcher.broadcast(
-        JSON.stringify({ type: "joinPlayer", client, ...player })
-      );
+      dispatcher.broadcast({ type: "joinPlayer", client, ...player });
     }
 
     state.destroyTimeLife = 10;

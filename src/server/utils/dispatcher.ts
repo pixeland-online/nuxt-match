@@ -9,7 +9,7 @@ export class Dispatcher {
   }
 
   broadcast(
-    message: string,
+    message: any,
     clients: Array<ClientRaw["clientId"]> = [],
     key?: string
   ) {

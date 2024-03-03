@@ -1,6 +1,7 @@
 import type { Peer } from "crossws";
 import { randomUUID, type UUID } from "crypto";
 import type { Match } from "./match";
+import { ProtocolOp } from "./protocol";
 
 export type ClientRaw = {
   clientId: UUID;
@@ -35,13 +36,13 @@ export class Client {
   constructor(match: Match, peer: Peer) {
     this.#match = match;
     this.#peer = peer;
-    this.#peer.send(JSON.stringify({ op: "reconnect", data: this.reconnect }));
+    this.#peer.send({ op: ProtocolOp.RECONNECT, data: this.reconnect });
   }
 
   refresh(peer: Peer) {
     this.#reconnect = randomUUID();
     this.#peer = peer;
-    this.#peer.send(JSON.stringify({ op: "reconnect", data: this.reconnect }));
+    this.#peer.send({ op: ProtocolOp.RECONNECT, data: this.reconnect });
     this.update();
   }
 
@@ -57,7 +58,11 @@ export class Client {
    * With the exception of chat, we receive several messages if the egg has
    * lost contact in 5 seconds and will receive everything that was missed in the chat.
    */
-  send(message: string, key?: string) {
+  send(message: any, key?: string) {
+    if (typeof message == "object") {
+      message = JSON.stringify(message);
+    }
+
     if (!key) {
       key = `${message},${this.#match.tick}`;
     }
@@ -80,7 +85,7 @@ export class Client {
     }
 
     if (data.length > 0) {
-      this.#peer.send(data);
+      this.#peer.send({ op: ProtocolOp.MATCH_DATA, data });
     }
   }
 }
