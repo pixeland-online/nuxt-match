@@ -73,9 +73,14 @@ export class Client {
 
   update() {
     const queues = this.#queues.splice(0, this.#queues.length);
-    console.log("queues", queues);
+    const data: string[] = [];
+
     for (let { message } of queues) {
-      this.#peer.send(message);
+      data.push(message);
+    }
+
+    if (data.length > 0) {
+      this.#peer.send(data);
     }
   }
 }
