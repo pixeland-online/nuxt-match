@@ -1,7 +1,6 @@
 import type { ClientRaw } from "./client";
 import type { Match } from "./match";
 
-export type DispatcherData = string;
 
 export class Dispatcher {
   #match: Match;
@@ -10,9 +9,11 @@ export class Dispatcher {
     this.#match = match;
   }
 
-  broadcast<T extends DispatcherData>(
-    data: T,
-    clients: Array<ClientRaw["clientId"]> = []
+  broadcast(
+    message: string,
+    clients: Array<ClientRaw["clientId"]> = [],
+    key: string = message,
+    ignoreTick: boolean = false
   ) {
     let targets = this.#match.clients;
 
@@ -21,7 +22,7 @@ export class Dispatcher {
     }
 
     for (let target of targets) {
-      target.send(data);
+      target.send(message, key, ignoreTick);
     }
   }
 }

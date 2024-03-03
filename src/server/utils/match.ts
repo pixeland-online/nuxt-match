@@ -82,6 +82,10 @@ export class Match {
     return this.#clients;
   }
 
+  get tick() {
+    return this.#updater.tick
+  }
+
   constructor(
     name: string,
     handler: MatchHandler<MatchState>,
@@ -136,6 +140,12 @@ export class Match {
       messages.map(({ client, message }) => ({ client, message }))
     );
 
+    for (let client of this.#clients) {
+      if (!this.#reconnects[client.reconnect]) {
+        client.update()
+      }
+    }
+
     if (update == null) {
       this.stop();
     } else {
@@ -175,7 +185,8 @@ export class Match {
 
       delete this.#reconnects[reconnect];
       clearTimeout(timeout);
-      client.peer = peer;
+      client.refresh(peer)
+
       return;
     }
 
@@ -183,7 +194,7 @@ export class Match {
       throw new Error("Dublicate client peer");
     }
 
-    const client = new Client(peer);
+    const client = new Client(this, peer);
 
     if (
       this.#handler.join_attempt(
@@ -219,6 +230,7 @@ export class Match {
           remove();
         }, recconect),
       };
+
       return;
     }
 
