@@ -57,8 +57,6 @@ onMounted(async () => {
           pong.value = true;
           console.log("pong");
         } else {
-          message = JSON.parse(message);
-
           if (message.type == "joinPlayer") {
             console.log("joinPlayer", message);
           }

@@ -59,12 +59,14 @@ export class Client {
    * lost contact in 5 seconds and will receive everything that was missed in the chat.
    */
   send(message: any, key?: string) {
-    if (typeof message == "object") {
-      message = JSON.stringify(message);
-    }
-
     if (!key) {
-      key = `${message},${this.#match.tick}`;
+      if (typeof message == "object") {
+        key = JSON.stringify(message);
+      } else {
+        key = message;
+      }
+
+      key = `${key},${this.#match.tick}`;
     }
 
     const index = this.#queues.findIndex((queue) => queue.key == key);
