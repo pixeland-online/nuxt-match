@@ -13,21 +13,24 @@ export default defineMatchHandler<State>({
   update(state, dispatcher, tick, messages) {
     console.log("messages", tick, messages);
 
-
     for (let { client, message } of messages) {
       // Example ping/pong
       if (message.text() == "ping") {
         dispatcher.broadcast("pong", [client]);
-      }
+      } else {
+        const data = JSON.parse(message.text());
 
-      const data = JSON.parse(message.text())
-
-      // Example move player
-      if (data.type == 'move') {
-        const x = data.x as number
-        const y = data.y as number
-        state.players[client] = { x, y }
-        dispatcher.broadcast(JSON.stringify({ type: 'move', x, y, client }), [], 'move', true)
+        // Example move player
+        if (data.type == "move") {
+          const x = data.x as number;
+          const y = data.y as number;
+          state.players[client] = { x, y };
+          dispatcher.broadcast(
+            JSON.stringify({ type: "move", x, y, client }),
+            [],
+            "move"
+          );
+        }
       }
     }
 
@@ -46,9 +49,11 @@ export default defineMatchHandler<State>({
     console.log("join", tick, clients);
 
     for (let client of clients) {
-      const player = { x: 0, y: 0 }
+      const player = { x: 0, y: 0 };
       state.players[client] = player;
-      dispatcher.broadcast(JSON.stringify({ type: 'joinPlayer', client, ...player }))
+      dispatcher.broadcast(
+        JSON.stringify({ type: "joinPlayer", client, ...player })
+      );
     }
 
     state.destroyTimeLife = 10;
@@ -65,7 +70,7 @@ export default defineMatchHandler<State>({
 
     for (let client of clients) {
       delete state.players[client];
-      dispatcher.broadcast(JSON.stringify({ type: 'leavePlayer', client }))
+      dispatcher.broadcast(JSON.stringify({ type: "leavePlayer", client }));
     }
 
     return state;

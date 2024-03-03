@@ -45,6 +45,7 @@ onMounted(async () => {
   ws.addEventListener("message", (message) => {
     if (message.data == "pong") {
       pong.value = true;
+      console.log("pong");
     }
   });
 });
